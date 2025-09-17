@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>翻牌記憶遊戲</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #f2f2f2; }
+    h1 { color: #333; }
+    #game-board { display: grid; grid-template-columns: repeat(4, 120px); grid-gap: 10px; justify-content: center; margin-top: 20px; }
+    .card {
+      width: 120px; height: 80px; background: #4caf50; color: white;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 18px; cursor: pointer; border-radius: 8px;
+    }
+    .flipped, .matched { background: #fff; color: #333; cursor: default; }
+    #status { margin-top: 20px; font-size: 18px; }
+    #next-level { margin-top: 20px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>翻牌記憶遊戲</h1>
+  <div id="game-board"></div>
+  <div id="status"></div>
+  <button id="next-level">進入下一關</button>
+
+  <script>
+    const wordPairs = [
+      ["dove","鴿子"], ["robin","知更鳥"], ["consider","考慮"], ["woodpecker","啄木鳥"],
+      ["ruling","統治的"], ["family","家庭"], ["scorn","輕蔑"], ["associated","有關的"],
+      ["officially","官方地"], ["mutually","互相地"], ["eventually","最終"], ["martial","武術的"],
+      ["mind-body","身心的"], ["gain","獲得"], ["aspect","方面"], ["poetic","詩意的"],
+      ["vital force","生命力"], ["noticeable","顯著的"], ["effortlessly","輕而易舉地"], ["cultivation","培養"],
+      ["domesticated","馴化的"], ["colonist","殖民者"], ["multimillion","數百萬的"], ["generate","產生"],
+      ["ancestor","祖先"], ["bark","樹皮/狗叫聲"]
+    ];
+
+    let currentLevel = 0;
+    const cardsPerLevel = 8; // 每關 8 組
+    let board = document.getElementById("game-board");
+    let status = document.getElementById("status");
+    let nextBtn = document.getElementById("next-level");
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function loadLevel(level) {
+      board.innerHTML = "";
+      status.textContent = `第 ${level+1} 關`;
+      nextBtn.style.display = "none";
+
+      let start = level * cardsPerLevel;
+      let end = start + cardsPerLevel;
+      let pairs = wordPairs.slice(start, end);
+
+      if (pairs.length === 0) {
+        status.textContent = "🎉 恭喜完成全部關卡！";
+        return;
+      }
+
+      let cards = [];
+      pairs.forEach(([en, zh]) => {
+        cards.push({ text: en, pair: en });
+        cards.push({ text: zh, pair: en });
+      });
+
+      shuffle(cards);
+
+      cards.forEach((card, idx) => {
+        let div = document.createElement("div");
+        div.className = "card";
+        div.dataset.pair = card.pair;
+        div.dataset.index = idx;
+        div.textContent = "";
+        div.addEventListener("click", () => flipCard(div, card.text));
+        board.appendChild(div);
+      });
+    }
+
+    let firstCard = null;
+    function flipCard(cardDiv, text) {
+      if (cardDiv.classList.contains("flipped") || cardDiv.classList.contains("matched")) return;
+
+      cardDiv.textContent = text;
+      cardDiv.classList.add("flipped");
+
+      if (!firstCard) {
+        firstCard = cardDiv;
+      } else {
+        if (firstCard.dataset.pair === cardDiv.dataset.pair) {
+          firstCard.classList.add("matched");
+          cardDiv.classList.add("matched");
+          firstCard = null;
+          checkLevelComplete();
+        } else {
+          setTimeout(() => {
+            firstCard.textContent = "";
+            cardDiv.textContent = "";
+            firstCard.classList.remove("flipped");
+            cardDiv.classList.remove("flipped");
+            firstCard = null;
+          }, 800);
+        }
+      }
+    }
+
+    function checkLevelComplete() {
+      let unmatched = document.querySelectorAll(".card:not(.matched)");
+      if (unmatched.length === 0) {
+        status.textContent = `第 ${currentLevel+1} 關完成！`;
+        nextBtn.style.display = "inline-block";
+      }
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentLevel++;
+      loadLevel(currentLevel);
+    });
+
+    loadLevel(currentLevel);
+  </script>
+</body>
+</html>
